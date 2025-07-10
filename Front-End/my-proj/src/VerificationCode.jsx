@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate,Link } from 'react-router-dom';
 import styles from './Verification.module.css';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
@@ -12,6 +12,7 @@ function VerificationCode() {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
+console.log(email);
 
   const handleInputChange = (e, index) => {
     const value = e.target.value.slice(-1); // Get the last character
@@ -25,6 +26,8 @@ function VerificationCode() {
   };
 
   const handleSubmit = async (e) => {
+    console.log(e);
+    
     e.preventDefault();
 
     try {
@@ -33,7 +36,7 @@ function VerificationCode() {
         email,
         code: verificationCode,
       });
-
+      
       if (response.data.success) {
         toast.info('Verification successful!');
         navigate('/login'); // Redirect to the login page after verification
@@ -78,8 +81,8 @@ function VerificationCode() {
           </div>
           <button className={styles.verifybtn}>Verify OTP</button>
           <h6>Didn't receive the code?</h6>
-          <a href="#"> Send code again</a>
-          <a href="#"> Change E-mail address</a>
+          <a href="#" onClick={() => handleSubmit()}> Send code again</a>
+          <Link to='/register'><a href="#"> Change E-mail address</a></Link>
         </form>
       </div>
     </div>

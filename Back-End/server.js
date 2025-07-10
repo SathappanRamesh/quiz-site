@@ -10,8 +10,10 @@ const MongoStore = require("connect-mongo");
 const UserModel = require('./models/User');
 const TemporaryUserModel = require('./models/TemporaryUser');
 const { OAuth2Client } = require('google-auth-library');
-
+const User = require('./models/User');
 const app = express();
+import dotenv from 'dotenv';
+dotenv.config();
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors({
@@ -22,31 +24,26 @@ app.use(cors({
 
 app.use(
   session({
-    secret: "123456789",
+    secret: process.env.JWT_SECRET_KEY,
     resave: false,
     saveUninitialized: true,
     cookie: {
       maxAge: 60000 * 60,
-      secure: true, // Set this if using HTTPS
+      secure: true,
       httpOnly: true,
-
     },
     store: MongoStore.create({
       mongooseConnection: mongoose.connection,
-      ttl: 24 * 60 * 60, // 1 day in seconds
-      connectTimeoutMS: 30000, // 30 seconds
-
+      ttl: 24 * 60 * 60, 
+      connectTimeoutMS: 30000,
       mongoUrl: "mongodb+srv://sathappanramesh288:Guvi123...@cluster0.bsgotks.mongodb.net/Main_Project_1?retryWrites=true&w=majority",
     }),
-  })  
+  })
 );
-
-const PORT = 3000;
-const DB_URL = "mongodb+srv://sathappanramesh288:Guvi123...@cluster0.bsgotks.mongodb.net/Main_Project_1?retryWrites=true&w=majority";
-
+const PORT = process.env.PORT || 3000;
+const DB_URL = process.env.MONGO_DB;
 mongoose.connect(DB_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+  family: 4,
 })
 .then(() => console.log("Connected to MongoDB"))
 .catch((err) => {
@@ -57,7 +54,6 @@ mongoose.connect(DB_URL, {
   // Middleware to check if the user is authenticated
   const authenticateUser = (req, res, next) => {
     const $FSA_auth_token = req.headers.authorization.split(" ")[1];
-    console.log("$FSA_auth_token", $FSA_auth_token);
     
     if (!$FSA_auth_token) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -66,14 +62,11 @@ mongoose.connect(DB_URL, {
       $FSA_auth_token,
       "123456789"
   );
-  console.log("decided token" ,decodedToken);
-
   req.user = {
     username: decodedToken.username,
     userId: decodedToken.userId, 
     email: decodedToken.email,
-  }
-    console.log("Authenticated user:", req.user);
+  }  
     next();
   };
 
@@ -106,7 +99,6 @@ app.post('/register', async (req, res) => {
       fourDigitCode: token
     });
     await temporaryUser.save();
-
     // Send verification email
     sendEmail(email, token);
     res.status(201).json({ message: 'Verification code sent. Please check your email.', email });
@@ -211,17 +203,17 @@ app.post('/login', async (req, res) => {
 
 app.post('/verify-code', async (req, res) => {
   const { email, code } = req.body;
-
+  
   try {
-    const temporaryUser = await TemporaryUserModel.findOne({ email, fourDigitCode: code });
-
+    const temporaryUser = await TemporaryUserModel.findOne({ email: email, fourDigitCode: code });
+    
     if (temporaryUser) {
       const newUser = new UserModel({
         username: temporaryUser.username,
         email: temporaryUser.email,
         password: temporaryUser.password,
         registered: true,
-        deviceRegistered: true  // Set deviceRegistered to true
+        deviceRegistered: true,
       });
 
       await newUser.save();
@@ -237,11 +229,349 @@ app.post('/verify-code', async (req, res) => {
   }
 });
 
-app.get('/api/track-unload', async (req, res) => {
-  const {message} = res;
-  console.log(message);
+app.get('/myProfile', authenticateUser, (req, res) => {
+  const user = req.user;
+  res.json({ username: user.username, _id: user.userId, email: user.email });
+});
+
+app.post('/api/user-temp-progress', async (req, res) => {
+  const { userId, progress } = req.body;
   
-})
+  if (!userId || !progress) {
+    return res.status(400).send("Missing userId, progress data, or quizId");
+  }
+
+  try {
+    const user = await UserModel.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    const existingProgress = user.tempProgress.find((p) => p.quizId === progress.tag);
+    
+    if (!existingProgress) {
+      // Add new progress
+      user.tempProgress.push({
+        quizId: progress.tag || null,
+        answers: progress.answers || {},
+        time: progress.time || 0,
+        currentQuestion: progress.currentQuestion || {},
+        subProgress: progress.subProgress || 0,
+      });
+    } else {
+      // Update existing progress
+      const index = user.tempProgress.findIndex((p) => p.quizId === progress.tag);
+      user.tempProgress[index] = {
+        quizId: progress.tag,
+        answers: progress.answers || existingProgress.answers,
+        time: progress.time || existingProgress.time,
+        currentQuestion: progress.currentQuestion || existingProgress.currentQuestion,
+        subProgress: progress.subProgress || existingProgress.subProgress,
+      };
+    }
+    await user.save();
+    res.status(200).send("Progress saved successfully!");
+  } catch (error) {
+    console.error("Error saving progress:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post('/api/count-attempts', async (req, res) => {
+  let { userId, tag, isValidUrl } = req.body;  
+  
+  if (!userId || !tag || !isValidUrl) {
+    console.log('Req.body from countatte', userId, tag, isValidUrl);
+    return res.status(400).send("Missing required fields: userId, genreType, or tag!");
+  }
+    if (tag == 'fill-ups') {
+    tag = 'fillups'
+  }
+    if (tag === "guess-by-image") {
+    tag = "guessByImage";
+  }
+  
+  try {
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    // Validate allChapterPoints and genreType
+    if (!user.userStats?.allChapterPoints || !user.userStats.allChapterPoints[tag]) {
+      return res.status(400).send(`Invalid genreType: ${tag}`);
+    }
+    // getting the specific tag and save it to the variable called 'genrePoints'
+    const genrePoints = user.userStats.allChapterPoints[tag];
+    // Check if the isValidUrl exists
+    const exist = genrePoints[isValidUrl];
+    user.userStats.overAllAttempts += 1;     
+    if (exist) {
+      exist.attempts += 1;      
+    } else {
+      genrePoints[isValidUrl] = {
+        attempts:1,
+      }
+      user.markModified('userStats.allChapterPoints');
+    }
+    user.markModified('userStats.allChapterPoints');
+    await user.save();
+    res.status(200).send("Attempts saved successfully!");
+  } catch (error) {
+    console.error("Error saving Attempts:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post('/api/save-game-info', async (req, res) => {
+  let { userId, userFinalResult, userAnswers, isValidUrl, tag, difficulty, activityDetails, topic} = req.body;
+
+  if (!userId || !isValidUrl || !tag || !difficulty ) {
+    return res.status(400).send("Missing required fields");
+  }
+  if (tag === 'fill-ups') {
+    tag = 'fillups';
+  }
+  if (tag === "guess-by-image") {
+    tag = "guessByImage";
+  }
+  try {
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    // Update tempProgress result
+    const tempIndex = user.tempProgress.findIndex(p => p.quizId === isValidUrl);
+
+    if (tempIndex !== -1) {
+      user.tempProgress[tempIndex].result = userFinalResult;
+    }
+
+    const quizKey = isValidUrl;
+
+    // Initialize the structure if it doesn't exist
+    if (!user.userStats.allChapterPoints[tag]) {
+      user.userStats.allChapterPoints[tag] = {};
+    }
+
+    if (!user.userStats.allChapterPoints[tag][quizKey]) {
+      user.userStats.allChapterPoints[tag][quizKey] = {
+        coins: null,
+        highScore: null,
+        attempts: 0,
+        noOfQuestionsRight: 0,
+        answers: [],
+      };
+      user.markModified('userStats.allChapterPoints');
+    }
+    const currentGame = user.userStats.allChapterPoints[tag][quizKey];
+    
+    // Update coins only if first time (coins is null)
+    if (!currentGame.coins) {
+      let coinEarned = 0;
+      if (difficulty === 'easy') {
+        coinEarned = userFinalResult;
+      } else if (difficulty === 'medium') {
+        coinEarned = userFinalResult * 2;
+      } else if (difficulty === 'hard') {
+        coinEarned = userFinalResult * 3;
+      }
+
+      user.userStats.coins += coinEarned;
+      currentGame.coins = coinEarned;      
+    }
+
+    // Calculate score
+    let score = 0;
+    if (difficulty === 'easy') {
+      score = userFinalResult * 2;
+    } else if (difficulty === 'medium') {
+      score = userFinalResult * 4;
+    } else if (difficulty === 'hard') {
+      score = userFinalResult * 6;
+    }
+
+    // Update high score
+    if (!currentGame.highScore) {
+      currentGame.highScore = score;
+    } else {
+      currentGame.highScore = Math.max(currentGame.highScore, score);
+    }
+
+    // Update answers and no of questions right
+    currentGame.noOfQuestionsRight = userFinalResult;
+    currentGame.answers = userAnswers;
+    currentGame.lastPlayedScore = score;
+    // Track attempts
+    currentGame.attempts += 1;
+    user.userStats.overAllAttempts += 1;
+
+    // If it's first attempt only
+    if (currentGame.attempts === 1) {
+      user.userStats.overallSkillScore += userFinalResult;
+      user.userStats.overAllNoOfQuestionsRight += userFinalResult;
+    }
+
+    // Recalculate average skill score
+    if (user.userStats.overAllAttempts > 0) {
+      const averageSkillScore = user.userStats.overallSkillScore / user.userStats.overAllAttempts;
+      user.userStats.overallSkillScore = Number(averageSkillScore.toFixed(2));
+    }
+
+    // Is Completed
+    if (userFinalResult === 12) {
+      user.userStats.allChapterPoints[tag][quizKey].isCompleted = true;
+    } else {
+      user.userStats.allChapterPoints[tag][quizKey].isCompleted = false;
+    }
+    user.markModified(`userStats.allChapterPoints`);
+
+    //////////////////////////  User Activit Tracking ///////////////////////////////////
+    let year =  activityDetails?.getYear;
+    let month =  activityDetails?.getMonth;
+    let fullDate =  activityDetails?.fullDate;
+
+    if (!user.userStats.isCompleted[isValidUrl]) {
+      user.userStats.isCompleted[isValidUrl] = true;
+
+      if (!user.userStats.activeTopics[topic]) user.userStats.activeTopics[topic] = 1;
+      else user.userStats.activeTopics[topic]++;
+
+if (!user.userStats.userActivityTrack) {
+  user.userStats.userActivityTrack = {};
+}
+if (!user.userStats.userActivityTrack[year]) {
+  user.userStats.userActivityTrack[year] = {};
+}
+if (!user.userStats.userActivityTrack[year][month]) {
+  user.userStats.userActivityTrack[year][month] = {};
+}
+if (!user.userStats.userActivityTrack[year][month][fullDate]) {
+  user.userStats.userActivityTrack[year][month][fullDate] = 1;
+} else {
+  user.userStats.userActivityTrack[year][month][fullDate]++;
+}
+    } 
+user.markModified('userStats.userActivityTrack');
+user.markModified('userStats.isCompleted');
+user.markModified('userStats.activeTopics');
+
+    await user.save();
+    res.status(200).send("User Game Info saved successfully");
+  } catch (error) {
+    console.error("Error saving Game Info:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get('/api/retrieve-user-temp-progress', authenticateUser, async (req, res) => {
+  
+  const { userId } = req.user;
+  try {
+    const user = await UserModel.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    const progress = user.tempProgress;
+    if (progress) res.status(200).json(progress);
+  } catch (error) {
+    console.error("Error fetching progress:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get('/api/fetch-userCredentials', authenticateUser, async (req, res) => {
+  
+  const { userId } = req.user;
+  try {
+    const user = await UserModel.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    const userCredentials = user.userStats;
+
+    if (userCredentials) res.status(200).json(userCredentials);
+  } catch (error) {
+    console.error("Error fetching userCredentials:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get('/api/get-user-whole-details', authenticateUser, async (req, res) => {
+  const { userId } = req.user;
+  
+  const docs = await User.find();
+  const sender = [];
+try {
+  for (const doc of docs) {
+    sender.push(doc)
+  }
+    if (sender) res.status(200).json(sender);
+    } catch (error) {
+    console.error("Error fetching userCredentials:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+app.post('/api/clear-form', async (req, res) => {
+  const { userId, isValidUrl } = req.body;
+  try {
+    let keyUrl = isValidUrl;
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    const index = user.tempProgress.findIndex((p) => p.quizId === keyUrl);    
+    if (index !== -1) {
+      user.tempProgress[index].answers = {};
+      user.tempProgress[index].subProgress = 0;
+      user.markModified('userStats.tempProgress');
+
+      await user.save();
+      res.status(200).send("User Game Info saved successfully");
+    } else {
+      res.status(404).send("Quiz not found in user's progress");
+    }
+
+  } catch (error) {
+    console.error("Error clearing form:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get('/api/user-activity-track', authenticateUser, async (req,res) => {
+  const {userId} = req.user;  
+  try {
+  let user = await UserModel.findOne({_id: userId});
+  let data = user.userStats.userActivityTrack;
+  let userActiveTopics =  user.userStats.activeTopics;  
+  if (data) {
+  res.status(200).json(
+    {
+      'data': data,
+      'userActiveTopics': userActiveTopics
+    }
+  );
+} 
+} catch (error) {
+  res.status(500).json({ error: 'Error fetching user activity track', details: error.message });
+}
+});
+
+app.post('/api/delete-temp-progress', async (req, res) => {
+  const { userId, isValidUrl } = req.body;
+  const user = await UserModel.findOne({_id:userId});
+  try {
+    const index = user.tempProgress.findIndex((p) => p.quizId === isValidUrl);
+    user.tempProgress.splice(index, 1); 
+    user.markModified('userStats.tempProgress');
+    await user.save();
+    res.json({ message: 'Item removed successfully', data: index });
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
 
 function generateToken(user) {
   const token = jwt.sign({username: user.username, email: user.email, password: user.password, userId: user._id }, '123456789', {
@@ -249,9 +579,6 @@ function generateToken(user) {
   });
   return token;
 }
-
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im5hbmR1IiwiZW1haWwiOiJzYXRoYXBwYW5yYW1lc2gyODhAZ21haWwuY29tIiwicGFzc3dvcmQiOiIkMmIkMTAkU1JEOExFbkJkaUJTTW1jdHBwVVFydVJ6MHovT3pISm8wL0xyT3ZNYm15Q2lETzZSMTQvZHkiLCJ1c2VySWQiOiI2NmMwYmRiOTdkYWIzMDkzN2NlOWE0ZWQiLCJpYXQiOjE3MjQ2NzkxMjIsImV4cCI6MTcyNDY3OTE4Mn0.vrdB-U9PbIJoCstFiugjVfIbwxCO-462vyagTfpKsig 
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 const emailTransporter = nodemailer.createTransport({
   service: 'gmail',
@@ -280,13 +607,6 @@ function sendEmail(email, token) {
 function generateVerificationPin() {
   return Math.floor(1000 + Math.random() * 9000);
 }
-
-app.get('/myProfile', authenticateUser, (req, res) => {
-  // Assuming you have user data in req.user after token validation
-  const user = req.user;
-  res.json({ username: user.username, email: user.email });
-});
-
 
 app.listen(PORT, () => {
   console.log("Server is running on PORT", PORT);
