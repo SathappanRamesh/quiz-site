@@ -404,7 +404,6 @@ app.post('/api/save-game-info', async (req, res) => {
     currentGame.answers = userAnswers;
     currentGame.lastPlayedScore = score;
     // Track attempts
-    currentGame.attempts += 1;
     user.userStats.overAllAttempts += 1;
 
     // If it's first attempt only
