@@ -29,10 +29,10 @@ const PrivateRoute = ({ children }) => {
     fetchProfile();
  }, [user?._id]);
        const userId = user?._id;   
-  const isAuthenticated = localStorage.getItem(`$FSA_auth_token`); // or use context
-  // console.log(isA);
+  const isAuthenticated = localStorage.getItem(`$FSA_auth_token`);
   
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 export default PrivateRoute;
+
