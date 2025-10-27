@@ -46,11 +46,11 @@ function Login() {
  }, [user?._id]);
   const handleSubmit = async (event) => {
     setLoader(true);
-    event.preventDefault(); // Prevent the default form submission behavior
+    event.preventDefault(); 
     try {
       const userId = user?._id;
       const response = await axios.post(
-        'https://quiz-app-iazp.onrender.com/login', // Make sure the API endpoint URL is correct
+        'https://quiz-app-iazp.onrender.com/login',
         { email, password },
         {
           headers: {
@@ -83,15 +83,14 @@ function Login() {
       const decoded = jwtDecode(credentialResponse.credential);
       const userId = user?._id; 
 
-      // Send the Google credential to your backend for verification
       const response = await axios.post('https://quiz-app-iazp.onrender.com/google-login', {
         googleCredential: credentialResponse.credential,
       });
 
       if (response.status === 200) {
-        const { $FSA_auth_token } = response.data; // Assuming the token is in the response from your backend
+        const { $FSA_auth_token } = response.data; 
         localStorage.setItem(`$FSA_auth_token`, $FSA_auth_token);
-        localStorage.setItem('registered', true);  // This can also be the token if used
+        localStorage.setItem('registered', true);
         toast.info('Google login successful!');
         navigate('/gk/all', { replace: true });
       } else {
@@ -187,3 +186,4 @@ function Login() {
 
 
 export default Login;
+
