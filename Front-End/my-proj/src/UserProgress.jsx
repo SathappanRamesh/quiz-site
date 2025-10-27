@@ -23,7 +23,7 @@ const monthNames = [
   "July", "August", "September", "October", "November", "December"
 ];
 
-let aa = [...monthNames]; // shallow copy of monthNames
+let aa = [...monthNames];
 const months = {
   "2025": aa,
 };
@@ -341,3 +341,4 @@ const setMonthlyData = (month) => {
 };
 
 export default UserProgress;
+
