@@ -13,7 +13,7 @@ export const UserProvider = ({ children }) => {
 
   const [user, setUser] = useState(null);
   
-  // ✅ Fetch user profile to get _id
+  // Fetch user profile to get _id
   useEffect(() => {
       console.log('user contxt file');
 
@@ -55,7 +55,6 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // Initial fetch on mount
   useEffect(() => {
     refreshUserCredentials();
   }, []);
@@ -68,3 +67,4 @@ export const UserProvider = ({ children }) => {
 };
 
 export const useUser = () => useContext(UserContext);
+
