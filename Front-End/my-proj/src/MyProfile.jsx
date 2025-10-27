@@ -62,8 +62,8 @@ const MyProfile = () => {
           proffession: response.data.proffession,
           country: response.data.country,
           phone: response.data.phone,
-          profilePic: response.data.profilePic, // URL of profile picture
-          coverPhoto: response.data.coverPhoto, // URL of cover photo
+          profilePic: response.data.profilePic, 
+          coverPhoto: response.data.coverPhoto,
         });
         setIsLoading(false);
         console.log(response);
@@ -173,4 +173,5 @@ export  function ChangePassword() {
 </div>
     </>
   );
+
 } 
