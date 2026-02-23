@@ -64,7 +64,7 @@ console.log(email);
         <h4> 
           Please enter the 4-digit verification code 
           <br />
-          we sent via SMS:
+          we sent via Email:
         </h4>
         <form className={styles.verifyForm} onSubmit={handleSubmit}>
           <div className={styles.inputField}>
@@ -90,3 +90,4 @@ console.log(email);
 }
 
 export default VerificationCode;
+
