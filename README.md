@@ -1,4 +1,7 @@
 # Quiz Platform
+![React](https://img.shields.io/badge/React-Frontend-blue)
+![Node.js](https://img.shields.io/badge/Node.js-Backend-green)
+![MongoDB](https://img.shields.io/badge/MongoDB-Database-brightgreen)
 
 A full-stack quiz platform where users can participate in quizzes, track progress, and view performance analytics.
 The application provides a smooth quiz-taking experience with authentication, dynamic question navigation, and progress tracking.
