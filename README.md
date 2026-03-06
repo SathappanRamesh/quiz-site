@@ -7,13 +7,13 @@
 
 A full-stack quiz platform that allows users to participate in interactive quizzes, track their progress, and analyze their performance. The application features secure authentication, dynamic question navigation, and real-time progress tracking to create a smooth and engaging quiz experience. Built with a modern MERN-based architecture, the platform demonstrates full-stack development including API design, user state management, and responsive UI.
 
-## Demo
-
-![Quiz Demo](demo/quiz-app-demo-gif.gif)
-
 ## Live Demo
 
 https://splendorous-hamster-e3fb28.netlify.app
+
+## Demo
+
+![Quiz Demo](demo/quiz-app-demo-gif.gif)
 
 ## Tech Stack
 
