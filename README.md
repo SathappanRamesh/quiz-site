@@ -6,6 +6,10 @@
 A full-stack quiz platform where users can participate in quizzes, track progress, and view performance analytics.
 The application provides a smooth quiz-taking experience with authentication, dynamic question navigation, and progress tracking.
 
+## Demo
+
+![Quiz Demo](./demo/quiz-demo.gif)
+
 ## Live Demo
 
 https://splendorous-hamster-e3fb28.netlify.app
