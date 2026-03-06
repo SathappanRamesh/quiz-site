@@ -3,8 +3,9 @@
 ![Node.js](https://img.shields.io/badge/Node.js-Backend-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-brightgreen)
 
-A full-stack quiz platform where users can participate in quizzes, track progress, and view performance analytics.
-The application provides a smooth quiz-taking experience with authentication, dynamic question navigation, and progress tracking.
+## Description
+
+A full-stack quiz platform that allows users to participate in interactive quizzes, track their progress, and analyze their performance. The application features secure authentication, dynamic question navigation, and real-time progress tracking to create a smooth and engaging quiz experience. Built with a modern MERN-based architecture, the platform demonstrates full-stack development including API design, user state management, and responsive UI.
 
 ## Demo
 
