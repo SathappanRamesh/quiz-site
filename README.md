@@ -1,5 +1,5 @@
 # Quiz Platform
-![React](https://img.shields.io/badge/React-Frontend-blue)
+![Reacst](https://img.shields.io/badge/React-Frontend-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-Backend-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-brightgreen)
 
@@ -9,7 +9,7 @@ A full-stack quiz platform that allows users to participate in interactive quizz
 
 ## Demo
 
-![Quiz Demo](demo/quiz-app-demo.gif)
+![Quiz Demo](./demo/quiz-app-demo.gif)
 
 ## Live Demo
 
