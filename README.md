@@ -9,7 +9,7 @@ A full-stack quiz platform that allows users to participate in interactive quizz
 
 ## Demo
 
-![Quiz Demo](./demo/quiz-app-demo-gif)
+![Quiz Demo](./demo/quiz-app-demo.gif)
 
 ## Live Demo
 
