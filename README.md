@@ -47,7 +47,7 @@ https://splendorous-hamster-e3fb28.netlify.app
 
 ### Frontend
 
-- cd client
+- cd my-proj
 - npm install
 
 ### Backend
@@ -60,12 +60,13 @@ https://splendorous-hamster-e3fb28.netlify.app
 ### Start the frontend
 
 - cd my-proj
-- npm start
+- npm run dev
 
 ### Start the backend server
 
 - cd server
-- npm run dev
+- node server.js
+- Optional: Install "nodemon" package for automated restarts (cd backend -> npm install nodemon)
 
 ## Environment Variables
 
@@ -80,3 +81,13 @@ https://splendorous-hamster-e3fb28.netlify.app
 - Add more quiz games
 - Improve analytics dashboard
 - Improve overall UI quality
+
+# Author
+
+## Sathappan R
+
+## GitHub
+- https://github.com/SathappanRamesh
+
+## LinkedIn
+- https://www.linkedin.com/in/sathappan-ramesh
