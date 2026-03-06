@@ -1,5 +1,5 @@
 # Quiz Platform
-![Reacst](https://img.shields.io/badge/React-Frontend-blue)
+![React](https://img.shields.io/badge/React-Frontend-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-Backend-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-brightgreen)
 
